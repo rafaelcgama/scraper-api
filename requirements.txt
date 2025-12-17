@@ -1,0 +1,6 @@
+seleniumbase
+requests
+lxml
+pandas
+pyarrow
+python-dotenv
