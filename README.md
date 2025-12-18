@@ -1,15 +1,84 @@
-# WallStreetSurvivor Scraper
+# Intelligent Audit – Take-Home Exercise
 
-Python-based scraper that authenticates into **Wall Street Survivor**, retrieves a user’s transaction history, transforms the data into a DataFrame, and saves it as a **Parquet** file.
+This project implements a **small, end-to-end data pipeline** composed of two independent services:
 
-The scraper is designed to be:
-- **Fast** (browser used only for authentication)
-- **Simple** (clear separation of concerns)
-- **Runnable on demand** (CLI-style execution)
+1. A **Python web scraper** that collects and persists transaction data
+2. A **FastAPI service** that exposes the persisted data via a REST API
+
+The goal is to demonstrate clear separation of concerns, pragmatic engineering trade-offs, and production-oriented
+structure.
 
 ---
 
-## Requirements
+## Functional Requirements
+
+### Scraper
+
+Implement a Python-based scraper that:
+
+- Authenticates into **Wall Street Survivor** for at least one user
+  *(You may create your own WallStreetSurvivor account; only an email address is required)*
+- Retrieves the authenticated user’s **transaction history**
+- Transforms the extracted data into a **Pandas DataFrame**
+- Persists the result locally as a **Parquet** file
+- Runs as an **independent, on-demand process**
+    - Executable via script or CLI
+    - **Not** coupled to the API server lifecycle
+
+---
+
+### API Service (FastAPI)
+
+Implement a FastAPI application that:
+
+- Exposes a `GET /transactions` endpoint
+- Reads the persisted transaction data from the **Parquet** file
+- Returns the data as **JSON**
+- Uses a clear, consistent, and easy-to-understand response schema  
+  *(exact schema design is intentionally left open)*
+
+---
+
+### Project Structure (High Level)
+
+```text
+.
+├── data/               # Shared persisted datasets (Parquet output)
+├── wss_scraper/        # Scraper service (produces Parquet)
+├── wss_api/            # API service (serves Parquet as JSON)
+├── requirements.txt    # Shared dependencies
+└── README.md           # Project overview and run instructions
+```
+
+- wss_scraper/ produces data
+- data/ stores persisted results
+- wss_api/ consumes the persisted data
+
+## Scraper Overview
+
+Python-based scraper that authenticates into **Wall Street Survivor**, retrieves a user’s transaction history,
+transforms the data into a DataFrame, and saves it as a **Parquet** file.
+
+The scraper is designed to be:
+
+- **Fast** (browser used only for authentication)
+- **Simple** (clear separation of concerns)
+- **Runnable on demand** (CLI-style execution)
+- **Extensible** (scraper and API are decoupled)
+
+---
+
+### High-Level Data Flow
+
+1. The scraper authenticates into WallStreetSurvivor using a real browser
+2. Transaction data is retrieved and processed
+3. The resulting dataset is persisted locally as a Parquet file
+
+Design decisions and trade-offs are documented in the service-level [`wss_scraper/README.md`](wss_scraper/README.md).
+
+---
+
+### Requirements
 
 - Python **3.10+**
 - Google Chrome (or Chromium)
@@ -17,9 +86,9 @@ The scraper is designed to be:
 
 ---
 
-## Environment Setup
+### Environment Setup
 
-### 1. Create and activate a virtual environment
+#### 1. Create and activate a virtual environment
 
 ```bash
 python -m venv .venv
@@ -27,12 +96,13 @@ source .venv/bin/activate   # macOS / Linux
 # .venv\Scripts\activate    # Windows
 ```
 
-### 2. Install dependencies
+#### 2. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configuring Credentials
+#### 3. Configuring Credentials
 
 This project uses a `.env` file to store login credentials securely.
 
@@ -45,19 +115,7 @@ WSS_USERNAME=your_email@example.com
 WSS_PASSWORD=your_password
 ```
 
-## Running the Scraper
-
-Once the environment is set up and credentials are configured, you can run the scraper.
-
-### 1. Ensure prerequisites
-
-- Virtual environment is activated  
-- Dependencies are installed  
-- **.env** file exists with valid credentials  
-
-### 2. Run the scraper
-
-From the project root directory:
+### Running the Scraper
 
 ```bash
 python -m wss_scraper.scrape
@@ -65,60 +123,119 @@ python -m wss_scraper.scrape
 
 Optional flags:
 
-- Run headless (no visible browser)
 ```bash
+# Run headless (no visible browser)
 python -m wss_scraper.scrape --headless
+# Specify a custom output file path (defaults to data/transactions.parquet)
+python -m wss_scraper.scrape --out data/my_new_transactions.parquet
 ```
 
-- Specify a custom output file path.  
-  If not provided, the scraper uses the default path defined in the code.
+---
+
+## API Service Overview
+
+The API service exposes the persisted transaction data produced by the scraper via a
+simple, read-only REST interface.
+
+It is intentionally decoupled from the scraping process and does not perform:
+
+- Authentication
+- Browser automation
+- Data ingestion
+
+The API service is designed to be:
+
+- **Simple** — single responsibility: serve transaction data
+- **Fast** — reads from an on-disk Parquet file
+- **Stateless** — no user sessions or background jobs
+- **Decoupled** — depends only on the data produced by the scraper
+- **Easy to extend** — filtering, pagination, or additional endpoints can be added cleanly
+
+---
+
+### High-Level Data Flow (API)
+
+1. The API service starts independently of the scraper
+2. On request, it reads the Parquet file from data/
+3. The data is serialized and returned as JSON via HTTP
+
+The API assumes the Parquet file already exists and does **not** attempt to generate or refresh it.
+
+Design decisions and trade-offs are documented in the service-level [`wss_api/README.md`](wss_api/README.md).
+
+---
+
+### Requirements
+
+- Python **3.10+**
+- Parquet file generated by the scraper (`data/transactions.parquet`)
+
+---
+
+### Running the API Service
+
 ```bash
-python -m wss_scraper.scrape --out my_transactions.parquet
+uvicorn wss_api.main:app --reload
 ```
 
-### 3. Testing the scraper
+By default, the API will be available at:
 
-Run all tests
+```bash
+http://localhost:8000
+```
+
+Interactive documents:
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### Testing
+
+All unit tests for both services are executed via Python’s built-in
+unittest discovery.
+
+Run the full test suite from the project root:
+
 ```bash
 python -m unittest -v
 ```
 
-Run a specific test module
+Run only scraper tests:
+
 ```bash
-python -m unittest -v wss_scraper.tests.test_login
+python -m unittest -v wss_scraper.tests
 ```
 
-Test coverage is measured using coverage.py.
+Run only API tests:
 
-Run tests with coverage:
+```bash
+python -m unittest -v wss_api.tests
+```
+
+Run a specific test module
+
+```bash
+python -m unittest -v wss_scraper.tests.test_login # Scraper
+python -m unittest -v wss_api.tests.test_main      # API
+```
+
+Test coverage (optional)
+
 ```bash
 coverage run -m unittest
-```
-
-View coverage report in the terminal:
-```bash
 coverage report -m
 ```
 
-Optional (HTML report)
+Optional HTML report:
+
 ```bash
 coverage html
 open htmlcov/index.html     # macOS
 # start htmlcov\index.html  # Windows
 ```
 
-### 4. Output
+### Notes
 
-The scraper will:
-- Authenticate using a real browser
-- Reuse the authenticated session for HTTP requests
-- Retrieve the full transaction history
-- Transform the data into a DataFrame
-- Save the result as a Parquet file
-
-If the script completes successfully, the Parquet file will be created automatically.
-
-## Notes
-- Browser automation is used only for authentication.
-- All transaction data is fetched via HTTP for performance.
-- The scraper is intended to be run as a short-lived batch process.
+- The scraper is a short-lived batch process
+- The API is read-only by design
+- If the Parquet file changes, the API must be restarted to reflect new data

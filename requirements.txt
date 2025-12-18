@@ -5,3 +5,6 @@ pandas
 pyarrow
 python-dotenv
 coverage
+fastapi
+uvicorn[standard]
+httpx
