@@ -582,3 +582,7 @@ FodyWeavers.xsd
 
 # SeleniumBase files
 downloaded_files/
+
+# Excalidraw files
+*.excalidraw
+/excalidraw.json
