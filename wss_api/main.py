@@ -39,6 +39,6 @@ def get_transactions(
         count=total,
         limit=limit,
         offset=offset,
-        transactions=[Transaction(data=r) for r in rows],
+        transactions=[Transaction(row) for row in rows],
         source=SETTINGS.parquet_path,
     )
