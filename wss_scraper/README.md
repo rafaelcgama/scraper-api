@@ -15,6 +15,8 @@ The scraper follows a **two-phase architecture** optimized for performance and r
 A real browser is used **only once** to handle authentication and anti-bot protections.  
 After authentication, all data retrieval is performed using a persistent HTTP session.
 
+---
+
 ### Component Responsibilities
 
 | Component     | Responsibility                                                             |

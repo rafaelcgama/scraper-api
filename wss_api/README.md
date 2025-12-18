@@ -17,6 +17,8 @@ The API follows a **single-responsibility, read-only architecture** optimized fo
 The API does **not** perform scraping, authentication, or background processing.  
 It assumes the dataset already exists on disk and focuses solely on serving that data.
 
+---
+
 ### Component Responsibilities
 
 | Component     | Responsibility                                            |

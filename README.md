@@ -54,6 +54,8 @@ Implement a FastAPI application that:
 - data/ stores persisted results
 - wss_api/ consumes the persisted data
 
+---
+
 ## Scraper Overview
 
 Python-based scraper that authenticates into **Wall Street Survivor**, retrieves a user’s transaction history,
@@ -78,6 +80,25 @@ Design decisions and trade-offs are documented in the service-level [`wss_scrape
 
 ---
 
+### Configuring Credentials
+
+This project uses a `.env` file to store login credentials securely.
+
+In the project root directory, create a file named **.env** and add your Wall Street Survivor credentials:
+
+```env
+WSS_USERNAME=your_email@example.com
+WSS_PASSWORD=your_password
+
+# Optional: explicit Chrome binary path
+CHROME_BINARY=/path/to/chrome
+```
+
+- If not provided, SeleniumBase will attempt to auto-detect a system-installed Chrome browser.
+- Auto-detection may result in slower startup during login, but the scraper will still function correctly
+
+---
+
 ### Requirements
 
 - Python **3.10+**
@@ -92,8 +113,12 @@ Design decisions and trade-offs are documented in the service-level [`wss_scrape
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # macOS / Linux
-# .venv\Scripts\activate    # Windows
+
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate
 ```
 
 #### 2. Install dependencies
@@ -102,18 +127,7 @@ source .venv/bin/activate   # macOS / Linux
 pip install -r requirements.txt
 ```
 
-#### 3. Configuring Credentials
-
-This project uses a `.env` file to store login credentials securely.
-
-In the project root directory, create a file named **.env**
-
-Add your Wall Street Survivor credentials:
-
-```env
-WSS_USERNAME=your_email@example.com
-WSS_PASSWORD=your_password
-```
+---
 
 ### Running the Scraper
 
@@ -182,6 +196,8 @@ By default, the API will be available at:
 
 ```bash
 http://localhost:8000
+or
+http://127.0.0.1:8000
 ```
 
 Interactive documents:
@@ -189,7 +205,9 @@ Interactive documents:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
-### Testing
+---
+
+## Testing
 
 All unit tests for both services are executed via Python’s built-in
 unittest discovery.
@@ -230,9 +248,84 @@ Optional HTML report:
 
 ```bash
 coverage html
-open htmlcov/index.html     # macOS
-# start htmlcov\index.html  # Windows
+
+# macOS
+open htmlcov/index.html
+
+# Linux
+xdg-open htmlcov/index.html
+
+# Windows
+start htmlcov\index.html
 ```
+
+---
+
+## Docker
+
+This project can be run end-to-end using Docker.
+
+---
+
+### Prerequisites
+
+Before running the container, ensure that **Docker is installed and running** on your machine:
+
+- **macOS / Windows**
+    - Install [**Docker Desktop**](https://www.docker.com/products/docker-desktop/)
+    - **Make sure Docker Desktop is running** before executing any `docker` commands  
+      (the Docker daemon does not start automatically until Docker Desktop is opened)
+
+- **Linux**
+    - Install Docker Engine via your package manager
+    - The Docker daemon typically runs as a system service and does **not** require a GUI
+
+You can verify Docker is running with:
+
+```bash
+docker version
+```
+
+### Execution Model
+
+On container startup, Docker runs the pipeline in this order:
+
+1. Executes the scraper (headless) to generate `data/transactions.parquet`
+2. Starts the FastAPI server
+
+Once running, the API serves the scraped data via `GET /transactions` when called by a client (e.g. `curl`, browser,
+Postman).
+
+The container runs ingestion and serving together for simplicity.
+In production, these responsibilities would typically be deployed as independent services.
+
+---
+
+### Build
+
+```bash
+docker build -t intelligent-audit .
+```
+
+### Run
+
+Ensure credentials are configured as described in [Configuring Credentials](#configuring-credentials).
+
+```bash
+docker run --rm -p 8000:8000 --env-file .env intelligent-audit
+```
+
+Once running, call the API from your host machine:
+
+```bash
+curl "http://127.0.0.1:8000/transactions"
+# or with pretty print
+curl "http://127.0.0.1:8000/transactions" | python -m json.tool
+# or with pagination:
+curl "http://127.0.0.1:8000/transactions?limit=50&offset=0"
+```
+
+---
 
 ### Notes
 
