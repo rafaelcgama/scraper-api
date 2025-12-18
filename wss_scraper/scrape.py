@@ -17,7 +17,6 @@ from wss_scraper.login import login_and_get_session_artifacts
 from wss_scraper.fetch import create_session, fetch_headers, fetch_transactions
 from wss_scraper.parse import parse_transactions, parse_headers
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -25,6 +24,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+
+def get_dates():
+    SECONDS_IN_DAY = 86400
+    end_date = time.strftime("%m-%d-%Y")
+    start_date = time.strftime(
+        "%m-%d-%Y",
+        time.localtime(time.time() - 180 * SECONDS_IN_DAY)
+    )
+
+    return start_date, end_date
 
 
 def main() -> None:
@@ -41,7 +51,7 @@ def main() -> None:
         raise SystemExit("Missing WSS_USERNAME / WSS_PASSWORD (.env file required)")
 
     cookies, user_agent = login_and_get_session_artifacts(
-        BASE_URL, email, password, headless=True, chrome_binary=chrome_binary #args.headed
+        BASE_URL, email, password, headless=True, chrome_binary=chrome_binary  # args.headed
     )
 
     session = create_session(cookies, user_agent)
@@ -49,21 +59,17 @@ def main() -> None:
     all_rows = []
     page = 1
 
-    SECONDS_IN_DAY = 86400
-    end_date = time.strftime("%m-%d-%Y")
-    start_date = time.strftime(
-        "%m-%d-%Y",
-        time.localtime(time.time() - 180 * SECONDS_IN_DAY)
-    )
+    start_date, end_date = get_dates()
+
     payload_headers = fetch_headers(
         session,
         BASE_URL,
         REFERER_TRANSACTION_ENDPOINT,
         REFERER_HEADERS_ENDPOINT,
     )
-    
+
     headers = parse_headers(payload_headers)
-    
+
     while True:
         payload_transactions = fetch_transactions(
             session,

@@ -39,7 +39,6 @@ def parse_transactions(headers: List[str], html_fragment: str) -> List[Dict[str,
     wrapped = f"<table>{html_fragment}</table>"
     doc = html.fromstring(wrapped)
 
-
     transactions = []
     for i, tr in enumerate(doc.xpath(".//tr"), start=1):
         tds = tr.xpath("./td")

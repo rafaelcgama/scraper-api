@@ -99,6 +99,17 @@ If session expiration occurs, the correct recovery strategy would be to re-authe
 
 ---
 
+### Dynamic Header Extraction
+
+**Trade-off**:
+An additional HTTP request is made to retrieve table headers.
+
+**Reason**:
+Transaction rows are loaded asynchronously and do not include column names.
+Fetching headers dynamically from the page ensures the scraper adapts to column additions, renames, or reordering without hardcoding a schema, improving maintainability while adding negligible overhead.
+
+---
+
 ### Parsing Strategy
 
 **Trade-off:**  

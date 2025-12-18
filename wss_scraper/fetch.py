@@ -29,6 +29,7 @@ def create_session(cookies: Dict[str, str], user_agent: str) -> requests.Session
     session.cookies.update(cookies)
     return session
 
+
 def fetch_headers(
         session: requests.Session,
         base_url: str,
@@ -71,6 +72,7 @@ def fetch_headers(
             time.sleep(1.0 * attempt)
 
     raise FetchError("Failed to fetch transactionhistory HTML") from last_exc
+
 
 def fetch_transactions(
         session: requests.Session,
