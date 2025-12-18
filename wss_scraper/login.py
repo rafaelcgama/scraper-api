@@ -1,5 +1,5 @@
-from typing import Dict, Tuple
 import logging
+from typing import Dict, Tuple
 
 from seleniumbase import SB
 
@@ -10,7 +10,7 @@ def login_and_get_session_artifacts(
         base_url: str,
         email: str,
         password: str,
-        headed: bool = False,
+        headless: bool = False,
         chrome_binary: str | None = None
 ) -> Tuple[Dict[str, str], str]:
     """
@@ -19,7 +19,7 @@ def login_and_get_session_artifacts(
 
     sb_kwargs = {
         "uc": True,
-        "headed": headed,
+        "headless": headless,
     }
 
     if chrome_binary:
