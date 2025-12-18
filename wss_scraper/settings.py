@@ -1,5 +1,6 @@
 BASE_URL = "https://app.wallstreetsurvivor.com"
 TRANSACTION_ENDPOINT = "/account/gettransactions"
+HEADERS_ENDPOINT = "/account/transactionhistory"
 REFERER_TRANSACTION_ENDPOINT = "/account/transactionhistory"
 REFERER_HEADERS_ENDPOINT = "/account/dashboardv2"
 PARQUET_FILENAME = "transactions.parquet"

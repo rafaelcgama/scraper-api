@@ -79,6 +79,7 @@ target/
 # Jupyter Notebook
 *.ipynb
 .ipynb_checkpoints
+!/.ipynb_checkpoints/
 
 # IPython
 profile_default/
@@ -579,4 +580,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-!/.ipynb_checkpoints/
+# SeleniumBase files
+downloaded_files/

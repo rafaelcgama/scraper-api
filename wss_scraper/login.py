@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 
 from seleniumbase import SB
 
@@ -11,12 +11,14 @@ def login_and_get_session_artifacts(
         email: str,
         password: str,
         headless: bool = False,
-        chrome_binary: str | None = None
+        chrome_binary: Optional[str] = None
 ) -> Tuple[Dict[str, str], str]:
     """
-    Logs in using SeleniumBase and returns cookies + user-agent.
-    """
+    Authenticate via SeleniumBase and extract session cookies and user-agent.
 
+    A real browser is required to pass Cloudflare protection. The returned
+    cookies and user-agent can be reused for authenticated HTTP requests.
+    """
     sb_kwargs = {
         "uc": True,
         "headless": headless,
@@ -34,8 +36,13 @@ def login_and_get_session_artifacts(
         sb.type("//input[@id='Password']", password)
         sb.click("//input[@type='submit']")
 
+        # Wait until login completes (URL change or known element)
         sb.wait_for_ready_state_complete()
-        sb.sleep(1)
+        sb.wait_for_element_not_present("//input[@id='tbLoginUserName']", timeout=10)
+
+        current_url = sb.get_current_url()
+        if "/login" in current_url.lower():
+            raise RuntimeError("Login failed: still on login page")
 
         logger.info("Login successful, extracting session")
 

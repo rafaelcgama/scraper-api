@@ -29,8 +29,7 @@ source .venv/bin/activate   # macOS / Linux
 
 ### 2. Install dependencies
 ```bash
-source .venv/bin/activate   # macOS / Linux
-# .venv\Scripts\activate    # Windows
+pip install -r requirements.txt
 ```
 
 ### 3. Configuring Credentials
@@ -54,22 +53,72 @@ Once the environment is set up and credentials are configured, you can run the s
 
 - Virtual environment is activated  
 - Dependencies are installed  
-- `.env` file exists with valid credentials  
+- **.env** file exists with valid credentials  
 
 ### 2. Run the scraper
 
 From the project root directory:
 
 ```bash
-python scrape.py
+python -m wss_scraper.scrape
 ```
 
-### 3. Output
+Optional flags:
+
+- Run headless (no visible browser)
+```bash
+python -m wss_scraper.scrape --headless
+```
+
+- Specify a custom output file path.  
+  If not provided, the scraper uses the default path defined in the code.
+```bash
+python -m wss_scraper.scrape --out my_transactions.parquet
+```
+
+### 3. Testing the scraper
+
+Run all tests
+```bash
+python -m unittest -v
+```
+
+Run a specific test module
+```bash
+python -m unittest -v wss_scraper.tests.test_login
+```
+
+Test coverage is measured using coverage.py.
+
+Run tests with coverage:
+```bash
+coverage run -m unittest
+```
+
+View coverage report in the terminal:
+```bash
+coverage report -m
+```
+
+Optional (HTML report)
+```bash
+coverage html
+open htmlcov/index.html     # macOS
+# start htmlcov\index.html  # Windows
+```
+
+### 4. Output
 
 The scraper will:
-- Log in to Wall Street Survivor
-- Retrieve the transaction history
+- Authenticate using a real browser
+- Reuse the authenticated session for HTTP requests
+- Retrieve the full transaction history
 - Transform the data into a DataFrame
-- Save the result as a Parquet file in the project directory
+- Save the result as a Parquet file
 
 If the script completes successfully, the Parquet file will be created automatically.
+
+## Notes
+- Browser automation is used only for authentication.
+- All transaction data is fetched via HTTP for performance.
+- The scraper is intended to be run as a short-lived batch process.
