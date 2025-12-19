@@ -261,9 +261,9 @@ start htmlcov\index.html
 
 ---
 
-## Docker
+## Docker (Docker Compose)
 
-This project can be run end-to-end using Docker.
+This project can be run end-to-end using **Docker Compose**.
 
 ---
 
@@ -304,7 +304,7 @@ In production, these responsibilities would typically be deployed as independent
 ### Build
 
 ```bash
-docker build -t intelligent-audit .
+docker compose build
 ```
 
 ### Run
@@ -312,8 +312,16 @@ docker build -t intelligent-audit .
 Ensure credentials are configured as described in [Configuring Credentials](#configuring-credentials).
 
 ```bash
-docker run --rm -p 8000:8000 --env-file .env intelligent-audit
+docker compose up
 ```
+
+Stop and remove the container when finished:
+
+```bash
+docker compose down
+```
+
+### Call the API
 
 Once running, call the API from your host machine:
 
