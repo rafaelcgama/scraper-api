@@ -3,31 +3,31 @@
 This document describes the architecture, data flow, and key design decisions behind the WallStreetSurvivor **API
 service**.
 
-The API is a read-only service that exposes transaction data previously scraped and persisted by the scraper component.
+The API is a **read-only service** that exposes transaction data previously scraped and persisted by the scraper
+component.  
 It intentionally focuses on data serving only and does not perform scraping, authentication, or background processing.
 
 ---
 
 ## Overall Architecture
 
-The API follows a **single-responsibility, read-only architecture** optimized for clarity and predictable performance.
+The API follows a **single-responsibility, read-only architecture** optimized for clarity and predictable performance:
 
 1. **File-based data access (Parquet)**
 2. **HTTP-based data exposure (FastAPI)**
 
-The API does **not** perform scraping, authentication, or background processing.  
-It assumes the dataset already exists on disk and focuses solely on serving that data.
+The API assumes the dataset already exists on disk and focuses solely on serving that data via HTTP.
 
 ---
 
 ### Component Responsibilities
 
-| Component     | Responsibility                                            |
-|---------------|-----------------------------------------------------------|
-| `main.py`     | FastAPI app + HTTP boundary                               |
-| `storage.py`  | Loads Parquet data and applies filtering/pagination logic |
-| `models.py`   | Defines response schemas / data models                    |
-| `settings.py` | Centralizes API configuration (paths, limits, defaults)   |
+| Component     | Responsibility                                         |
+|---------------|--------------------------------------------------------|
+| `main.py`     | FastAPI application and HTTP boundary                  |
+| `storage.py`  | Load Parquet data and apply filtering/pagination logic |
+| `models.py`   | Define response schemas and data models                |
+| `settings.py` | Centralize API configuration (paths, limits, defaults) |
 
 This separation keeps HTTP concerns, business logic, and data modeling clearly isolated.
 
@@ -43,11 +43,11 @@ The end-to-end API data flow is as follows:
 
 2. **Request Handling**
     - A client issues a `GET /transactions` request.
-    - Query parameters (e.g. limit, offset) are validated by FastAPI.
+    - Query parameters (e.g. `limit`, `offset`) are validated by FastAPI.
 
 3. **Data Access**
     - The service layer reads the Parquet file from the shared `data/` directory.
-    - Data is loaded into memory (or sliced as needed).
+    - Data is loaded into memory and sliced as required.
 
 4. **Serialization**
     - Records are mapped into well-defined response models.
@@ -59,48 +59,51 @@ The API never modifies or regenerates the dataset.
 
 ## Trade-offs and Assumptions
 
-### FastAPI vs Flask
+### Web Framework Choice
+
+**Decision:**  
+Use FastAPI as the web framework for the API service.
 
 **Trade-off:**  
-FastAPI introduces slightly more abstraction than Flask for a simple read-only API.
+FastAPI introduces slightly more abstraction compared to a minimal Flask setup.
 
 **Reason:**  
-FastAPI provides:
+The project instructions explicitly required the use of FastAPI.  
+Beyond that requirement, FastAPI offers built-in request validation, automatic OpenAPI documentation, and clear schema
+definitions through type hints.
 
-- Built-in request validation
-- Automatic OpenAPI documentation
-- Clear schema definitions via type hints
-
-These features improve clarity and correctness with minimal additional complexity, making FastAPI well suited for an
-interview exercise.
+These features improve correctness, self-documentation, and developer experience with minimal added complexity, making
+FastAPI a strong fit for a small, read-only API like this one.
 
 ---
 
 ### Synchronous Implementation
 
+**Decision:**  
+Implement the API using synchronous request handling.
+
 **Trade-off:**  
-The API uses synchronous I/O despite FastAPI supporting async endpoints.
+The API does not take advantage of FastAPI’s async capabilities.
 
 **Reason:**  
 Reading a local Parquet file is CPU-bound and fast for moderate datasets.  
-Using async would not provide meaningful performance benefits and would complicate the implementation.
+Using async would not provide meaningful performance benefits and would complicate the implementation unnecessarily.
 
-The design favors correctness and simplicity over premature optimization.
+The design favors simplicity and correctness over premature optimization.
 
 ---
 
 ### File-Based Data Source
 
+**Decision:**  
+Serve data directly from a local Parquet file.
+
 **Trade-off:**  
-The API reads from a local Parquet file instead of a database.
+The API does not use a database or caching layer.
 
 **Reason:**  
-The dataset is produced by a batch scraper and is read-only.  
-Parquet provides:
-
-- Efficient columnar storage
-- Fast load times
-- Minimal operational overhead
+The dataset is produced by an on-demand scraper and is read-only.  
+Parquet offers efficient columnar storage, fast load times, and minimal operational overhead.
 
 Introducing a database would add unnecessary complexity for the given requirements.
 
@@ -109,62 +112,58 @@ Introducing a database would add unnecessary complexity for the given requiremen
 ### Stateless API
 
 **Assumption:**  
-The API is stateless and single-user.
+The API is stateless and serves a single dataset.
 
 **Reason:**  
-The take-home exercise scope does not require:
-
-- Authentication
-- Multi-user isolation
-- Concurrent data mutation
-
-This simplifies deployment and testing while still demonstrating sound architectural choices.
+The scope of the project does not require authentication, multi-user isolation, or concurrent data mutation.  
+A stateless design simplifies deployment, testing, and reasoning about system behavior.
 
 ---
 
 ### Layering and Abstraction
 
 **Decision:**  
-The API uses minimal abstraction and shallow module layering (no deep controller/service/repository stack).
+Use minimal abstraction and shallow module layering.
 
 **Trade-off:**  
-This limits extensibility and reuse if the API grows significantly in scope.
+The design limits extensibility if the API grows significantly in scope.
 
 **Reason:**  
-The API exposes a single endpoint that performs straightforward work (load Parquet → slice/filter → return JSON).  
-Introducing additional abstraction layers would add indirection and complexity without delivering meaningful benefits at
-this stage.
+The API exposes a single endpoint that performs straightforward work
+(load Parquet → slice/filter → return JSON).  
+Introducing additional layers (repositories, interfaces, adapters) would add indirection without providing meaningful
+benefits at this stage.
 
 ---
 
 ### Data Freshness
 
 **Decision:**  
-The API serves data from a persisted Parquet file generated by a separate scraper process.
+Serve data from a persisted Parquet file generated by a separate scraper process.
 
 **Trade-off:**  
 The data may become stale between scraper runs.
 
 **Reason:**  
-The scraper is intentionally designed as an on-demand batch process, fully decoupled from the API.  
+The scraper is intentionally designed as an on-demand process and is fully decoupled from the API.  
 If fresh data is required, the scraper can be re-run explicitly.
 
-This separation avoids hidden coupling between ingestion and serving, keeping both components simple and predictable.
+This separation avoids hidden coupling between ingestion and serving.
 
 ---
 
-### Pagination Metadata (limit / offset / count)
+### Pagination Metadata (`limit`, `offset`, `count`)
 
 **Decision:**  
-The API response includes pagination metadata (`limit`, `offset`, `count`) alongside the transaction records.
+Include pagination metadata in the API response.
 
 **Trade-off:**  
-The response contains additional fields beyond the minimum required by the assignment.
+The response includes additional fields beyond the minimum required.
 
 **Reason:**  
 Pagination metadata is a common and practical API design pattern.  
-Including it makes the API easier to consume by UIs (tables, infinite scroll) and prepares the service for larger
-datasets without requiring a breaking response change later.
+Including it makes the API easier to consume by client applications (tables, infinite scroll) and prepares the service
+for larger datasets without requiring a breaking response change later.
 
 Clients that do not need pagination can safely ignore these fields and consume the `transactions` array directly.
 
