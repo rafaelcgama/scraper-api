@@ -11,7 +11,7 @@ from wss_api.storage import StorageError, load_transactions
 load_dotenv()
 
 app = FastAPI(
-    title="WallStreetSurvivor Transactions API",
+    title="API Service",
     version="1.0.0",
 )
 

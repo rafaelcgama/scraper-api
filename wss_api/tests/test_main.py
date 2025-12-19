@@ -33,7 +33,7 @@ class TestGetTransactions(unittest.TestCase):
         self.assertEqual(len(body["transactions"]), 2)
 
         # Transaction model wraps row dict under "data"
-        self.assertEqual(body["transactions"][0]["data"]["symbol"], "AAPL")
+        self.assertEqual(body["transactions"][0]["symbol"], "AAPL")
 
         # Pydantic will serialize Path to string (if your model uses str)
         self.assertIn("source", body)

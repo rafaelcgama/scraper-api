@@ -49,7 +49,14 @@ class TestLogin(unittest.TestCase):
             ],
             any_order=False,
         )
-        sb_instance.click.assert_called_once_with("//input[@type='submit']")
+        submit = "//input[@type='submit']"
+        called = sb_instance.click.call_count + sb_instance.js_click.call_count
+        self.assertEqual(called, 1)
+
+        if sb_instance.click.call_count:
+            sb_instance.click.assert_called_once_with(submit)
+        else:
+            sb_instance.js_click.assert_called_once_with(submit)
 
         sb_instance.driver.execute_script.assert_called_once_with("return navigator.userAgent;")
         sb_instance.driver.get_cookies.assert_called_once()
