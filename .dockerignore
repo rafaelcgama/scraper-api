@@ -1,0 +1,38 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# Test & coverage artifacts
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+
+# Git
+.git/
+.gitignore
+
+# IDEs / Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Local environment files
+.env
+
+# Local data output (generated inside container)
+data/
+
+# Logs
+*.log
