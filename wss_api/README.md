@@ -5,6 +5,7 @@ service**.
 
 The API is a read-only service that exposes transaction data previously scraped and persisted by the scraper component.
 It intentionally focuses on data serving only and does not perform scraping, authentication, or background processing.
+
 ---
 
 ## Overall Architecture
