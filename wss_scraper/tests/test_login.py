@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch, call
 
-# Adjust this import to match your actual package/module path.
-# If login.py is at wss_scraper/login.py, use:
 from wss_scraper.login import login_and_get_session_artifacts
 
 

@@ -1,11 +1,10 @@
 # fetch.py
 from __future__ import annotations
 
-from time import sleep, time
 import logging
-from typing import Dict, Any
-
 import requests
+from typing import Dict, Any
+from time import sleep, time
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +74,6 @@ def fetch_headers(
                 raise FetchError("Failed to fetch headers HTML")
             sleep(min(attempt, 3))
 
-    # Unreachable, but keeps type-checkers happy
     raise FetchError("Failed to fetch headers HTML")
 
 
@@ -149,5 +147,4 @@ def fetch_transactions(
                 )
             sleep(min(attempt, 3))
 
-    # Unreachable, but keeps type-checkers happy
     raise FetchError(f"Failed to fetch pageIndex={page_index} after {retries} attempts")

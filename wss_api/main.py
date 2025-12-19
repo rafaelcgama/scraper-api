@@ -1,8 +1,8 @@
 # wss_api/main.py
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, Query
 from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Query
 
 from wss_api.models import Transaction, TransactionsResponse
 from wss_api.settings import SETTINGS

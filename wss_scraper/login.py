@@ -1,7 +1,6 @@
 import logging
-from typing import Dict, Tuple, Optional
-
 from seleniumbase import SB
+from typing import Dict, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,10 @@
 # scrape.py
 from __future__ import annotations
 
-import argparse
-import logging
 import os
 import time
-
+import logging
+import argparse
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -87,8 +86,8 @@ def main() -> None:
     headers_html = fetch_headers(
         session=session,
         base_url=BASE_URL,
-        endpoint=HEADERS_ENDPOINT,  # e.g. "/account/transactionhistory"
-        referer_path=REFERER_HEADERS_ENDPOINT,  # e.g ""/account/dashboardv2"
+        endpoint=HEADERS_ENDPOINT,
+        referer_path=REFERER_HEADERS_ENDPOINT,
     )
     headers = parse_headers(headers_html)
 
@@ -100,9 +99,9 @@ def main() -> None:
         payload = fetch_transactions(
             session=session,
             base_url=BASE_URL,
-            endpoint=TRANSACTION_ENDPOINT,  # "/account/gettransactions"
-            referer_path=REFERER_TRANSACTION_ENDPOINT,  # "/account/transactionhistory"
-            page_index=page,  # <-- IMPORTANT
+            endpoint=TRANSACTION_ENDPOINT,
+            referer_path=REFERER_TRANSACTION_ENDPOINT,
+            page_index=page,
             start_date=start_date,
             end_date=end_date,
         )

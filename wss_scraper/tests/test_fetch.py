@@ -1,7 +1,6 @@
+import requests
 import unittest
 from unittest.mock import MagicMock, patch
-
-import requests
 
 from wss_scraper.fetch import (
     FetchError,
@@ -21,7 +20,7 @@ def _mock_response(
         raise_for_status_raises: Exception | None = None,
 ):
     """
-    Small helper to build a response-like mock with only what fetch.py uses.
+    Helper to build a response-like mock with only what fetch.py uses.
     """
     resp = MagicMock()
     resp.status_code = status_code
@@ -260,11 +259,6 @@ class TestFetchTransactions(unittest.TestCase):
 
         # Wrapper at the end, because invalid JSON becomes FetchError, then caught, then wrapper raised
         self.assertIn("Failed to fetch pageIndex=1 after 1 attempts", str(ctx.exception))
-
-        # In your code, the "Invalid JSON response: ..." FetchError is raised using "from e",
-        # but it gets swallowed by the outer try/except and replaced by the wrapper.
-        # So we can't rely on __cause__ here at the top level.
-        # We only verify it doesn't crash and returns the correct wrapper message.
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_transactions_retries_then_succeeds(self, _sleep):
