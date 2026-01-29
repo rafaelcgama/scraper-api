@@ -1,4 +1,4 @@
-# Intelligent Audit – Take-Home Exercise
+# Transaction Scraper and Data API
 
 This project implements a **small, end-to-end data pipeline** composed of two independent services:
 
