@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Starting Intelligent Audit pipeline..."
+echo "Starting Scraper Api pipeline..."
 
 echo "Running scraper..."
 python -m wss_scraper.scrape --headless --out data/transactions.parquet

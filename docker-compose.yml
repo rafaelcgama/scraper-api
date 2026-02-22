@@ -4,6 +4,8 @@ services:
     container_name: scraper-api
     env_file:
       - .env
+    environment:
+      - CHROME_BINARY=/usr/bin/chromium
     ports:
       - "8000:8000"
     volumes:
