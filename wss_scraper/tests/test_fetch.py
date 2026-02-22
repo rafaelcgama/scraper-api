@@ -91,7 +91,7 @@ class TestFetchHeaders(unittest.TestCase):
             )
 
         # Your function wraps on last attempt
-        self.assertIn("Failed to fetch headers HTML", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching headers HTML", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_headers_5xx_raises_wrapper(self, _sleep):
@@ -109,7 +109,7 @@ class TestFetchHeaders(unittest.TestCase):
             )
 
         # Current behavior: wrapper message, not the 5xx message
-        self.assertIn("Failed to fetch headers HTML", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching headers HTML", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_headers_retries_then_succeeds(self, _sleep):
@@ -186,7 +186,7 @@ class TestFetchTransactions(unittest.TestCase):
                 timeout_s=30,
             )
 
-        self.assertIn("Failed to fetch pageIndex=1 after 1 attempts", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching transactions pageIndex=1 after 1 attempts", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_transactions_5xx_raises_wrapper(self, _sleep):
@@ -210,7 +210,7 @@ class TestFetchTransactions(unittest.TestCase):
                 timeout_s=30,
             )
 
-        self.assertIn("Failed to fetch pageIndex=1 after 1 attempts", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching transactions pageIndex=1 after 1 attempts", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_transactions_content_type_mismatch_raises_wrapper(self, _sleep):
@@ -233,7 +233,7 @@ class TestFetchTransactions(unittest.TestCase):
                 timeout_s=30,
             )
 
-        self.assertIn("Failed to fetch pageIndex=1 after 1 attempts", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching transactions pageIndex=1 after 1 attempts", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_transactions_invalid_json_sets_cause(self, _sleep):
@@ -258,7 +258,7 @@ class TestFetchTransactions(unittest.TestCase):
             )
 
         # Wrapper at the end, because invalid JSON becomes FetchError, then caught, then wrapper raised
-        self.assertIn("Failed to fetch pageIndex=1 after 1 attempts", str(ctx.exception))
+        self.assertIn("Failed to complete: Fetching transactions pageIndex=1 after 1 attempts", str(ctx.exception))
 
     @patch("wss_scraper.fetch.sleep", return_value=None)
     def test_fetch_transactions_retries_then_succeeds(self, _sleep):

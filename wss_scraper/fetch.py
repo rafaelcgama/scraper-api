@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import requests
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from time import sleep, time
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,55 @@ def create_session(cookies: Dict[str, str], user_agent: str) -> requests.Session
     return session
 
 
+def _get_with_retry(
+        session: requests.Session,
+        url: str,
+        *,
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        retries: int = 3,
+        timeout_s: int = 30,
+        context: str = "Request",
+        return_json: bool = False,
+) -> Any:
+    """
+    Helper function to perform an HTTP GET request with exponential backoff and error handling.
+    """
+    for attempt in range(1, retries + 1):
+        try:
+            logger.info("%s (attempt %d)", context, attempt)
+            resp = session.get(url, params=params, headers=headers, timeout=timeout_s)
+
+            if resp.status_code in (401, 403):
+                raise FetchError(f"Auth expired/blocked while: {context}")
+
+            if resp.status_code >= 500:
+                raise FetchError(
+                    f"Server error {resp.status_code} on {url}: {resp.text[:300]}"
+                )
+
+            resp.raise_for_status()
+
+            if return_json:
+                ctype = resp.headers.get("Content-Type", "")
+                if "application/json" not in ctype.lower():
+                    raise FetchError(f"Unexpected Content-Type: {ctype}")
+                try:
+                    return resp.json()
+                except Exception as e:
+                    raise FetchError(f"Invalid JSON response: {e}") from e
+
+            return resp.text
+
+        except Exception as e:
+            logger.warning("%s failed: %s", context, e)
+            if attempt == retries:
+                raise FetchError(f"Failed to complete: {context} after {attempt} attempts") from e
+            sleep(min(attempt, 3))
+
+    raise FetchError(f"Failed to complete: {context} after {retries} attempts")
+
+
 def fetch_headers(
         session: requests.Session,
         base_url: str,
@@ -52,29 +101,14 @@ def fetch_headers(
         "Referer": f"{base_url}{referer_path}",
     }
 
-    for attempt in range(1, retries + 1):
-        try:
-            logger.info("Fetching headers HTML (attempt %d)", attempt)
-            resp = session.get(url, headers=req_headers, timeout=timeout_s)
-
-            if resp.status_code in (401, 403):
-                raise FetchError("Auth expired/blocked while fetching headers HTML.")
-
-            if resp.status_code >= 500:
-                raise FetchError(
-                    f"Server error {resp.status_code} on {endpoint}: {resp.text[:300]}"
-                )
-
-            resp.raise_for_status()
-            return resp.text
-
-        except Exception as e:
-            logger.warning("Headers HTML fetch failed: %s", e)
-            if attempt == retries:
-                raise FetchError("Failed to fetch headers HTML")
-            sleep(min(attempt, 3))
-
-    raise FetchError("Failed to fetch headers HTML")
+    return _get_with_retry(
+        session=session,
+        url=url,
+        headers=req_headers,
+        retries=retries,
+        timeout_s=timeout_s,
+        context="Fetching headers HTML",
+    )
 
 
 def fetch_transactions(
@@ -115,36 +149,13 @@ def fetch_transactions(
 
     req_headers = {"Referer": f"{base_url}{referer_path}"}
 
-    for attempt in range(1, retries + 1):
-        try:
-            logger.info("Fetching transactions pageIndex=%s (attempt %s)", page_index, attempt)
-            resp = session.get(url, params=params, headers=req_headers, timeout=timeout_s)
-
-            if resp.status_code in (401, 403):
-                raise FetchError("Auth expired/blocked (401/403). Re-login required.")
-
-            if resp.status_code >= 500:
-                raise FetchError(
-                    f"Server error {resp.status_code} on {endpoint}: {resp.text[:300]}"
-                )
-
-            resp.raise_for_status()
-
-            ctype = resp.headers.get("Content-Type", "")
-            if "application/json" not in ctype.lower():
-                raise FetchError(f"Unexpected Content-Type: {ctype}")
-
-            try:
-                return resp.json()
-            except Exception as e:
-                raise FetchError(f"Invalid JSON response: {e}") from e
-
-        except Exception as e:
-            logger.warning("Fetch failed (pageIndex=%s): %s", page_index, e)
-            if attempt == retries:
-                raise FetchError(
-                    f"Failed to fetch pageIndex={page_index} after {retries} attempts"
-                )
-            sleep(min(attempt, 3))
-
-    raise FetchError(f"Failed to fetch pageIndex={page_index} after {retries} attempts")
+    return _get_with_retry(
+        session=session,
+        url=url,
+        headers=req_headers,
+        params=params,
+        retries=retries,
+        timeout_s=timeout_s,
+        context=f"Fetching transactions pageIndex={page_index}",
+        return_json=True,
+    )

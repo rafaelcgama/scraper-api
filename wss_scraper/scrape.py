@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import argparse
+from datetime import date, timedelta
 import pandas as pd
 from dotenv import load_dotenv
 
@@ -34,13 +35,11 @@ def get_dates(days_back: int = 180) -> tuple[str, str]:
     Return (start_date, end_date) in the format required by WSS (MM-DD-YYYY).
     Defaults to the last 180 days.
     """
-    seconds_in_day = 86400
-    end_date = time.strftime("%m-%d-%Y")
-    start_date = time.strftime(
-        "%m-%d-%Y",
-        time.localtime(time.time() - days_back * seconds_in_day),
-    )
-    return start_date, end_date
+    fmt = "%m-%d-%Y"
+    end_date = date.today()
+    start_date = end_date - timedelta(days=days_back)
+    return start_date.strftime(fmt), end_date.strftime(fmt)
+
 
 
 def build_argparser() -> argparse.ArgumentParser:

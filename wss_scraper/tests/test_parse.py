@@ -130,7 +130,7 @@ class TestParseTransactions(unittest.TestCase):
             parse_transactions(headers, html_fragment)
         self.assertIn("expected 3 cells", str(ctx.exception).lower())
 
-    def test_parse_transactions_empties_raise(self):
+    def test_parse_transactions_empties_skip(self):
         headers = ["a", "b"]
         html_fragment = """
           <tr>
@@ -138,9 +138,8 @@ class TestParseTransactions(unittest.TestCase):
             <td>   </td>
           </tr>
         """
-        with self.assertRaises(ParseError) as ctx:
-            parse_transactions(headers, html_fragment)
-        self.assertIn("empty values", str(ctx.exception).lower())
+        rows = parse_transactions(headers, html_fragment)
+        self.assertEqual(len(rows), 0)
 
     def test_parse_transactions_ignores_non_td_rows(self):
         headers = ["a"]

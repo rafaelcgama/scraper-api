@@ -16,13 +16,13 @@ class TestGetDates(unittest.TestCase):
         self.assertRegex(start_date, DATE_RE)
         self.assertRegex(end_date, DATE_RE)
 
-    @patch("wss_scraper.scrape.time.time", return_value=0)
-    @patch("wss_scraper.scrape.time.localtime")
-    @patch("wss_scraper.scrape.time.strftime")
-    def test_get_dates_calls_time_funcs(self, _strftime, _localtime, _time):
-        # Just ensure it uses strftime/localtime/time in the expected shape.
-        _strftime.side_effect = ["12-18-2025", "06-21-2025"]  # end_date, start_date
+    @patch("wss_scraper.scrape.date")
+    def test_get_dates_calls_time_funcs(self, mock_date):
+        import datetime
+        mock_date.today.return_value = datetime.date(2025, 12, 18)
+        
         start_date, end_date = scrape.get_dates(days_back=180)
+        
         self.assertEqual(end_date, "12-18-2025")
         self.assertEqual(start_date, "06-21-2025")
 

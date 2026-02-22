@@ -1,8 +1,11 @@
 # parse.py
 from __future__ import annotations
 
+import logging
 from lxml import html
 from typing import Any, Dict, List
+
+logger = logging.getLogger(__name__)
 
 
 class ParseError(RuntimeError):
@@ -68,10 +71,11 @@ def parse_transactions(headers: List[str], html_fragment: str) -> List[Dict[str,
                 f"Headers={headers} Values={values}"
             )
 
-        # Make sure there are no empty cells
+        # Skip rows with empty cells instead of crashing the scrape
         empties = [headers[j] for j, v in enumerate(values) if v == ""]
         if empties:
-            raise ParseError(f"Row {i}: empty values for columns: {empties}")
+            logger.warning("Row %d: empty values for columns %s - skipping row", i, empties)
+            continue
 
         transactions.append(dict(zip(headers, values)))
 

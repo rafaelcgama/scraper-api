@@ -33,7 +33,12 @@ def login_and_get_session_artifacts(
 
         sb.type("//input[@id='tbLoginUserName']", email)
         sb.type("//input[@id='Password']", password)
-        sb.click("//input[@type='submit']") if chrome_binary else sb.js_click("//input[@type='submit']")
+        
+        if chrome_binary:
+            sb.click("//input[@type='submit']")
+        else:
+            # JS click bypasses Cloudflare-protected elements in headless mode
+            sb.js_click("//input[@type='submit']")
 
         # Wait until login completes (URL change or known element)
         sb.wait_for_ready_state_complete()
