@@ -24,10 +24,10 @@ The API assumes the dataset already exists on disk and focuses solely on serving
 
 | Component     | Responsibility                                         |
 |---------------|--------------------------------------------------------|
-| `main.py`     | FastAPI application and HTTP boundary                  |
-| `storage.py`  | Load Parquet data and apply filtering/pagination logic |
+| `main.py`     | FastAPI application, lifecycle management, and in-memory cache |
+| `storage.py`  | Filter and paginate pre-loaded DataFrames              |
 | `models.py`   | Define response schemas and data models                |
-| `settings.py` | Centralize API configuration (paths, limits, defaults) |
+| `settings.py` | Centralize API configuration (independent of scraper)  |
 
 This separation keeps HTTP concerns, business logic, and data modeling clearly isolated.
 
@@ -38,20 +38,21 @@ This separation keeps HTTP concerns, business logic, and data modeling clearly i
 The end-to-end API data flow is as follows:
 
 1. **Startup**
-    - The FastAPI application starts independently of the scraper.
-    - No background jobs or data mutation occurs at startup.
+    - The API uses a FastAPI **lifespan hook** to read the Parquet file exactly once.
+    - The data is cached in an in-memory Pandas DataFrame (`RAM`).
+    - If the file is missing, the API remains available but returns a `503` error.
 
 2. **Request Handling**
     - A client issues a `GET /transactions` request.
-    - Query parameters (e.g. `limit`, `offset`) are validated by FastAPI.
+    - Query parameters (e.g. `limit`, `offset`) are validated.
 
-3. **Data Access**
-    - The service layer reads the Parquet file from the shared `data/` directory.
-    - Data is loaded into memory and sliced as required.
+3. **In-Memory Filtering**
+    - The service layer slices the cached DataFrame in memory (ultra-fast).
+    - Rows with missing data are safely filled to prevent JSON errors.
 
 4. **Serialization**
-    - Records are mapped into well-defined response models.
-    - Data is returned as structured JSON.
+    - Records are mapped into simple Pydantic response models.
+    - Data is returned as JSON.
 
 The API never modifies or regenerates the dataset.
 
@@ -93,19 +94,16 @@ The design favors simplicity and correctness over premature optimization.
 
 ---
 
-### File-Based Data Source
+### In-Memory Caching
 
 **Decision:**  
-Serve data directly from a local Parquet file.
+Cache the Parquet dataset in memory at startup using a `lifespan` hook.
 
 **Trade-off:**  
-The API does not use a database or caching layer.
+The API requires more RAM to run, and data freshness depends on a server restart.
 
 **Reason:**  
-The dataset is produced by an on-demand scraper and is read-only.  
-Parquet offers efficient columnar storage, fast load times, and minimal operational overhead.
-
-Introducing a database would add unnecessary complexity for the given requirements.
+Reading from a hard drive on every request is a major performance bottleneck. Since the scraper generates the data on-demand (and not constantly), loading the data into RAM results in near-instant response times for the end user and a much more professional, production-ready architecture.
 
 ---
 

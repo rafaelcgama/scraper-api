@@ -22,10 +22,11 @@ After authentication, all data retrieval is performed using a persistent HTTP se
 | Component     | Responsibility                                                             |
 |---------------|----------------------------------------------------------------------------|
 | `login.py`    | Authenticate using SeleniumBase and extract cookies and user-agent         |
-| `fetch.py`    | Reuse an authenticated HTTP session to retrieve paginated transaction data |
-| `parse.py`    | Parse HTML fragments into structured Python dictionaries                   |
-| `scrape.py`   | Orchestrate the workflow and persist results                               |
-| `settings.py` | Centralize configuration and defaults                                      |
+| `fetch.py`    | Handle authenticated GET requests with generic retry/backoff logic           |
+| `parse.py`    | Parse HTML fragments with improved resilience (warns on missing cells)        |
+| `scrape.py`   | Orchestrate workflow with modernized `datetime` range logic                   |
+| `login.py`    | Authenticate with clarified click strategies (Native vs JS)                   |
+| `settings.py` | Centralize scraper-specific configuration                                     |
 
 This separation ensures each component has a **single, well-defined responsibility**.
 
@@ -128,15 +129,26 @@ schema, improving maintainability at negligible cost.
 ### Parsing Strategy
 
 **Decision:**  
-Parse HTML fragments using `lxml` and XPath.
+Parse HTML fragments using `lxml` and XPath, but with a "Soft Failure" policy for missing data.
 
 **Trade-off:**  
-The parser is tightly coupled to the current HTML structure.
+The scraper may occasionally skip a row if expected data is missing, but it will continue to completion.
 
 **Reason:**  
-The transaction endpoint returns HTML embedded in a JSON payload rather than a structured API response.  
-Using `lxml` with XPath provides fast, deterministic parsing with fewer dependencies, which is appropriate for a stable
-table structure and a performance-focused scraper.
+Web UI elements frequently change or have minor inconsistencies. Previously, a single empty cell would crash the entire scrape. Now, the parser logs a warning and skips the problematic row, ensuring the rest of the dataset is preserved. This matches the resilient nature of modern data engineering.
+
+---
+
+### Network Reliability
+
+**Decision:**  
+Centralize all HTTP GET requests through a shared `_get_with_retry` helper.
+
+**Trade-off:**  
+Slightly more abstraction in the `fetch.py` layer.
+
+**Reason:**  
+Network connections are inherently unstable. By centralizing the retry logic with exponential backoff (retrying 3 times with increasing delays), the scraper can successfully bypass transient network blips and temporary server 500 errors without failing the entire job.
 
 ---
 

@@ -160,9 +160,9 @@ It is intentionally decoupled from the scraping process and does not perform:
 The API service is designed to be:
 
 - **Simple** — single responsibility: serve transaction data
-- **Fast** — reads from an on-disk Parquet file
+- **Fast** — uses an **in-memory cache** (RAM) for near-instant responses
 - **Stateless** — no user sessions or background jobs
-- **Decoupled** — depends only on the data produced by the scraper
+- **Decoupled** — operates independently of the scraper's code
 - **Easy to extend** — filtering, pagination, or additional endpoints can be added cleanly
 
 ---
@@ -170,8 +170,8 @@ The API service is designed to be:
 ### High-Level Data Flow (API)
 
 1. The API service starts independently of the scraper
-2. On request, it reads the Parquet file from data/
-3. The data is serialized and returned as JSON via HTTP
+2. **On Startup:** It reads the Parquet file from `data/` and caches it in RAM
+3. **On Request:** It serves data directly from the memory cache as JSON via HTTP
 
 The API assumes the Parquet file already exists and does **not** attempt to generate or refresh it.
 
@@ -338,5 +338,5 @@ curl "http://127.0.0.1:8000/transactions?limit=50&offset=0"
 ### Notes
 
 - The scraper is a short-lived batch process
-- The API is read-only by design
-- If the Parquet file changes, the API must be restarted to reflect new data
+- The API is read-only and uses an **in-memory cache** for maximum performance
+- If the Parquet file changes, the API must be restarted to refresh its cache and reflect new data
