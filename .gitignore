@@ -169,6 +169,7 @@ Temporary Items
 .apdisk
 
 ### VisualStudioCode template
+.vscode/
 *.vscode
 **.vscode/**
 *.code-workspace
@@ -586,3 +587,4 @@ downloaded_files/
 # Excalidraw files
 *.excalidraw
 /excalidraw.json
+!/.vscode/
